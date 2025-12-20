@@ -40,6 +40,11 @@
   let nextButton = null;
   const WINDOW_SIZE = 5; // 前后各5张图片
 
+  // 变换相关
+  let currentRotation = 0; // 当前旋转角度（0, 90, 180, 270）
+  let flipX = false; // X轴翻转状态
+  let flipY = false; // Y轴翻转状态
+
   // 创建预览容器
   function createPreviewContainer() {
     const container = document.createElement('div');
@@ -55,18 +60,18 @@
             display: none;
             align-items: center;
             justify-content: center;
-            cursor: grab;
             user-select: none;
         `;
 
     const img = document.createElement('img');
     img.id = 'image-preview-img';
     img.style.cssText = `
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
             transition: transform 0.1s ease-out;
             transform-origin: center center;
             pointer-events: auto;
-            cursor: grab;
         `;
 
     container.appendChild(img);
@@ -76,16 +81,16 @@
     thumbnailContainer.id = 'image-preview-thumbnails';
     thumbnailContainer.style.cssText = `
             position: absolute;
-            bottom: 20px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 10px;
+            gap: 6px;
             max-width: 90%;
             overflow-x: auto;
-            padding: 10px;
+            padding: 6px;
             background: rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
+            border-radius: 6px;
             z-index: 1000000;
         `;
     container.appendChild(thumbnailContainer);
@@ -185,6 +190,156 @@
     });
     container.appendChild(nextButton);
 
+    // 创建工具栏
+    const toolbar = document.createElement('div');
+    toolbar.id = 'image-preview-toolbar';
+    toolbar.style.cssText = `
+            position: absolute;
+            bottom: 95px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            z-index: 1000000;
+            backdrop-filter: blur(10px);
+        `;
+
+    // 旋转按钮
+    const rotateButton = document.createElement('button');
+    rotateButton.innerHTML = '↻';
+    rotateButton.title = '旋转90度';
+    rotateButton.style.cssText = `
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        `;
+    rotateButton.addEventListener('mouseenter', () => {
+      rotateButton.style.background = 'rgba(255, 255, 255, 0.3)';
+      rotateButton.style.transform = 'scale(1.1)';
+    });
+    rotateButton.addEventListener('mouseleave', () => {
+      rotateButton.style.background = 'rgba(255, 255, 255, 0.2)';
+      rotateButton.style.transform = 'scale(1)';
+    });
+    rotateButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentRotation = (currentRotation + 90) % 360;
+      updateTransform();
+    });
+    toolbar.appendChild(rotateButton);
+
+    // X轴翻转按钮
+    const flipXButton = document.createElement('button');
+    flipXButton.innerHTML = '↔';
+    flipXButton.title = '水平翻转';
+    flipXButton.style.cssText = `
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        `;
+    flipXButton.addEventListener('mouseenter', () => {
+      flipXButton.style.background = 'rgba(255, 255, 255, 0.3)';
+      flipXButton.style.transform = 'scale(1.1)';
+    });
+    flipXButton.addEventListener('mouseleave', () => {
+      flipXButton.style.background = 'rgba(255, 255, 255, 0.2)';
+      flipXButton.style.transform = 'scale(1)';
+    });
+    flipXButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      flipX = !flipX;
+      updateTransform();
+    });
+    toolbar.appendChild(flipXButton);
+
+    // Y轴翻转按钮
+    const flipYButton = document.createElement('button');
+    flipYButton.innerHTML = '↕';
+    flipYButton.title = '垂直翻转';
+    flipYButton.style.cssText = `
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        `;
+    flipYButton.addEventListener('mouseenter', () => {
+      flipYButton.style.background = 'rgba(255, 255, 255, 0.3)';
+      flipYButton.style.transform = 'scale(1.1)';
+    });
+    flipYButton.addEventListener('mouseleave', () => {
+      flipYButton.style.background = 'rgba(255, 255, 255, 0.2)';
+      flipYButton.style.transform = 'scale(1)';
+    });
+    flipYButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      flipY = !flipY;
+      updateTransform();
+    });
+    toolbar.appendChild(flipYButton);
+
+    // 恢复默认尺寸按钮
+    const resetButton = document.createElement('button');
+    resetButton.innerHTML = '⭮';
+    resetButton.title = '恢复默认尺寸';
+    resetButton.style.cssText = `
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        `;
+    resetButton.addEventListener('mouseenter', () => {
+      resetButton.style.background = 'rgba(255, 255, 255, 0.3)';
+      resetButton.style.transform = 'scale(1.1)';
+    });
+    resetButton.addEventListener('mouseleave', () => {
+      resetButton.style.background = 'rgba(255, 255, 255, 0.2)';
+      resetButton.style.transform = 'scale(1)';
+    });
+    resetButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetToDefaultSize();
+    });
+    toolbar.appendChild(resetButton);
+
+    container.appendChild(toolbar);
+
     document.body.appendChild(container);
 
     previewContainer = container;
@@ -229,6 +384,12 @@
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('mouseleave', handleMouseUp);
+
+    // 双击图片还原尺寸
+    img.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      resetToDefaultSize();
+    });
   }
 
   // 查找页面上的所有图片
@@ -314,15 +475,15 @@
       const thumbnail = document.createElement('img');
       thumbnail.src = item.src;
       thumbnail.style.cssText = `
-                width: 80px;
-                height: 80px;
+                width: 60px;
+                height: 60px;
                 object-fit: cover;
-                border-radius: 4px;
+                border-radius: 3px;
                 cursor: pointer;
                 border: ${
                   idx === currentImageIndex
-                    ? '3px solid white'
-                    : '3px solid transparent'
+                    ? '2px solid white'
+                    : '2px solid transparent'
                 };
                 opacity: ${idx === currentImageIndex ? '1' : '0.6'};
                 transition: all 0.2s;
@@ -389,6 +550,9 @@
     currentScale = 1.0; // 初始缩放为1.0，配合max-width/max-height使用
     currentTranslateX = 0;
     currentTranslateY = 0;
+    currentRotation = 0;
+    flipX = false;
+    flipY = false;
 
     // 加载新图片
     // 先清空src，避免显示旧图片
@@ -397,19 +561,17 @@
     // 使用setTimeout确保清空操作完成后再设置新src
     setTimeout(() => {
       previewImage.src = item.src;
-      
+
       // 等待图片加载完成后再更新约束和初始缩放
       if (previewImage.complete) {
         // 计算初始缩放，确保图片完整显示且周围至少保留20%黑边
         calculateInitialScale();
         updateTransform();
-        constrainTranslate();
       } else {
         previewImage.onload = () => {
           // 计算初始缩放，确保图片完整显示且周围至少保留20%黑边
           calculateInitialScale();
           updateTransform();
-          constrainTranslate();
           previewImage.onload = null; // 清理
         };
       }
@@ -549,29 +711,30 @@
     // 先清空src，避免显示旧图片
     previewImage.onload = null;
     previewImage.src = '';
-    
+
     previewContainer.style.display = 'flex';
     isPreviewOpen = true;
     currentScale = 1.0; // 初始缩放为1.0，配合max-width/max-height使用
     currentTranslateX = 0;
     currentTranslateY = 0;
+    currentRotation = 0;
+    flipX = false;
+    flipY = false;
 
     // 使用setTimeout确保清空操作完成后再设置新src
     setTimeout(() => {
       previewImage.src = imgSrc;
-      
+
       // 等待图片加载完成后再更新约束和初始缩放
       if (previewImage.complete) {
         // 计算初始缩放，确保图片完整显示且周围至少保留20%黑边
         calculateInitialScale();
         updateTransform();
-        constrainTranslate();
       } else {
         previewImage.onload = () => {
           // 计算初始缩放，确保图片完整显示且周围至少保留20%黑边
           calculateInitialScale();
           updateTransform();
-          constrainTranslate();
           previewImage.onload = null; // 清理
         };
       }
@@ -592,6 +755,9 @@
       currentScale = 1.0; // 重置为初始缩放
       currentTranslateX = 0;
       currentTranslateY = 0;
+      currentRotation = 0;
+      flipX = false;
+      flipY = false;
       document.body.style.overflow = '';
       // 不清空图片列表，保持状态以便下次快速打开
     }
@@ -600,14 +766,20 @@
   // 更新变换
   function updateTransform() {
     if (previewImage) {
-      const transformStr = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+      const transformStr = `translate(${currentTranslateX}px, ${currentTranslateY}px) rotate(${currentRotation}deg) scaleX(${
+        flipX ? -1 : 1
+      }) scaleY(${flipY ? -1 : 1}) scale(${currentScale})`;
       previewImage.style.transform = transformStr;
     }
   }
 
   // 限制缩放范围（限制最大和最小缩放，防止图片缩小到看不见）
   function constrainScale(scale) {
-    if (!previewImage || !previewImage.complete || previewImage.naturalWidth === 0) {
+    if (
+      !previewImage ||
+      !previewImage.complete ||
+      previewImage.naturalWidth === 0
+    ) {
       return Math.min(scale, 5); // 如果图片未加载，只限制最大缩放
     }
 
@@ -647,80 +819,95 @@
     const naturalWidth = previewImage.naturalWidth;
     const naturalHeight = previewImage.naturalHeight;
 
-    // 计算可用显示尺寸（左右各20%，上下各20%）
-    // 可用宽度 = 视窗宽度 * (1 - 0.2 * 2) = 视窗宽度 * 0.6
-    // 可用高度 = 视窗高度 * (1 - 0.2 * 2) = 视窗高度 * 0.6
-    const maxDisplayWidth = containerRect.width * 0.6;
-    const maxDisplayHeight = containerRect.height * 0.6;
+    // 计算可用显示尺寸（占视窗的70%）
+    // 可用宽度 = 视窗宽度 * 0.7
+    // 可用高度 = 视窗高度 * 0.7
+    const maxDisplayWidth = containerRect.width * 0.7;
+    const maxDisplayHeight = containerRect.height * 0.7;
 
     // 计算保持宽高比的最大缩放比例
     // 确保图片完整显示在可用区域内，选择较小的缩放比例
     const widthRatio = maxDisplayWidth / naturalWidth;
     const heightRatio = maxDisplayHeight / naturalHeight;
-    const maxRatio = Math.min(widthRatio, heightRatio, 1); // 不超过原始尺寸
 
-    // 强制设置初始缩放，确保图片完整显示且周围至少保留20%黑边
-    // 重置 currentScale 为计算出的最大比率
-    currentScale = maxRatio;
+    // 确保图片不会溢出视窗，选择较小的缩放比例
+    const maxRatio = Math.min(widthRatio, heightRatio);
+
+    // 额外安全检查：确保缩放后的尺寸不超过视窗尺寸
+    const scaledWidth = naturalWidth * maxRatio;
+    const scaledHeight = naturalHeight * maxRatio;
+
+    if (
+      scaledWidth > containerRect.width ||
+      scaledHeight > containerRect.height
+    ) {
+      // 如果仍然溢出，进一步缩小
+      const safeWidthRatio = containerRect.width / naturalWidth;
+      const safeHeightRatio = containerRect.height / naturalHeight;
+      const safeRatio = Math.min(safeWidthRatio, safeHeightRatio) * 0.98; // 留2%余量
+      currentScale = Math.min(maxRatio, safeRatio);
+    } else {
+      currentScale = maxRatio;
+    }
+
+    // 关键修复：设置图片的初始尺寸为自然尺寸，移除可能导致溢出的 width: 100%
+    // 图片会先按自然尺寸渲染，然后通过 transform: scale() 缩放
+    // 移除 width: 100% 设置，让图片按自然尺寸渲染
+    previewImage.style.width = naturalWidth + 'px';
+    previewImage.style.height = naturalHeight + 'px';
+    previewImage.style.maxWidth = 'none';
+    previewImage.style.maxHeight = 'none';
 
     // 重置平移，因为缩放改变了
     currentTranslateX = 0;
     currentTranslateY = 0;
   }
 
-  // 限制平移范围
+  // 限制平移范围（已禁用，允许自由拖拽）
   function constrainTranslate() {
-    if (!previewImage) return;
+    // 不再限制平移范围，允许图片自由移动
+  }
 
-    // 等待图片加载完成后再计算尺寸
-    if (!previewImage.complete || previewImage.naturalWidth === 0) {
-      return;
-    }
-
-    const containerRect = previewContainer.getBoundingClientRect();
-
-    // 获取图片的自然尺寸（原始尺寸）
-    const naturalWidth = previewImage.naturalWidth;
-    const naturalHeight = previewImage.naturalHeight;
-
-    // 计算缩放后的实际显示尺寸（直接使用natural尺寸乘以currentScale）
-    const scaledWidth = naturalWidth * currentScale;
-    const scaledHeight = naturalHeight * currentScale;
-
-    // 分别对X和Y方向进行约束判断
-    // X方向约束
-    if (scaledWidth <= containerRect.width) {
-      // 图片宽度小于等于容器，允许自由拖拽
-      const maxX = Math.max(200, containerRect.width);
-      currentTranslateX = Math.max(-maxX, Math.min(maxX, currentTranslateX));
-    } else {
-      // 图片宽度大于容器，限制在边界内
-      const maxX = (scaledWidth - containerRect.width) / 2;
-      currentTranslateX = Math.max(-maxX, Math.min(maxX, currentTranslateX));
-    }
-
-    // Y方向约束
-    if (scaledHeight <= containerRect.height) {
-      // 图片高度小于等于容器，允许自由拖拽
-      const maxY = Math.max(200, containerRect.height);
-      currentTranslateY = Math.max(-maxY, Math.min(maxY, currentTranslateY));
-    } else {
-      // 图片高度大于容器，限制在边界内
-      const maxY = (scaledHeight - containerRect.height) / 2;
-      currentTranslateY = Math.max(-maxY, Math.min(maxY, currentTranslateY));
-    }
+  // 恢复默认尺寸
+  function resetToDefaultSize() {
+    currentScale = 1;
+    currentRotation = 0;
+    flipX = false;
+    flipY = false;
+    currentTranslateX = 0;
+    currentTranslateY = 0;
+    calculateInitialScale();
+    updateTransform();
   }
 
   // 鼠标滚轮缩放
   function handleWheel(e) {
     if (!isPreviewOpen) return;
 
+    // 如果 x 轴有滚动，不进行缩放（用于水平滚动）
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
     const delta = e.deltaY;
-    // 增大缩放速度，每次缩放约10%，更快响应
-    const zoomFactor = delta > 0 ? 0.9 : 1.1;
+
+    // 区分触摸板和鼠标滚轮
+    // 触摸板通常 deltaMode 为 0 且 deltaY 值较小且连续
+    // 鼠标滚轮通常 deltaY 值较大（通常 > 50）
+    const isTrackpad = Math.abs(delta) < 50 && e.deltaMode === 0;
+
+    // 触摸板使用较小的缩放速率，鼠标滚轮使用较大的缩放速率
+    const zoomFactor =
+      delta > 0
+        ? isTrackpad
+          ? 0.95
+          : 0.9 // 缩小
+        : isTrackpad
+        ? 1.05
+        : 1.1; // 放大
 
     // 获取鼠标位置相对于图片的位置
     const rect = previewImage.getBoundingClientRect();
@@ -732,13 +919,14 @@
 
     // 以鼠标位置为中心缩放
     const scaleChange = currentScale / oldScale;
-    const newTranslateX = mouseX * (1 - scaleChange) + currentTranslateX * scaleChange;
-    const newTranslateY = mouseY * (1 - scaleChange) + currentTranslateY * scaleChange;
+    const newTranslateX =
+      mouseX * (1 - scaleChange) + currentTranslateX * scaleChange;
+    const newTranslateY =
+      mouseY * (1 - scaleChange) + currentTranslateY * scaleChange;
 
     currentTranslateX = newTranslateX;
     currentTranslateY = newTranslateY;
 
-    constrainTranslate();
     updateTransform();
   }
 
@@ -804,7 +992,6 @@
       currentTranslateY =
         imageCenterY * (1 - scaleRatio) + dragStartTranslateY * scaleRatio;
 
-      constrainTranslate();
       updateTransform();
       e.preventDefault();
     } else if (e.touches.length === 1 && isDragging) {
@@ -816,7 +1003,6 @@
       currentTranslateX = dragStartTranslateX + deltaX;
       currentTranslateY = dragStartTranslateY + deltaY;
 
-      constrainTranslate();
       updateTransform();
       e.preventDefault();
     }
@@ -848,8 +1034,8 @@
       dragStartY = e.clientY;
       dragStartTranslateX = currentTranslateX;
       dragStartTranslateY = currentTranslateY;
-      
-      previewContainer.style.cursor = 'grabbing';
+
+      previewImage.style.cursor = 'grabbing';
       previewImage.style.transition = 'none'; // 拖拽时禁用过渡，更流畅
       e.preventDefault();
     }
@@ -867,12 +1053,22 @@
       currentTranslateX = dragStartTranslateX + deltaX;
       currentTranslateY = dragStartTranslateY + deltaY;
 
-      constrainTranslate();
       updateTransform();
     } else {
       // 未拖拽时，根据鼠标位置更新光标样式
-      if (e.target === previewImage) {
+      // 只在图片上显示 grab，背景保持默认 cursor
+      const rect = previewImage.getBoundingClientRect();
+      const x = e.clientX;
+      const y = e.clientY;
+      const isOverImage =
+        x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+
+      if (isOverImage) {
         previewContainer.style.cursor = 'grab';
+        previewImage.style.cursor = 'grab';
+      } else {
+        previewContainer.style.cursor = 'default';
+        previewImage.style.cursor = 'grab';
       }
     }
   }
@@ -881,10 +1077,11 @@
   function handleMouseUp(e) {
     if (isDragging) {
       isDragging = false;
-      previewContainer.style.cursor = 'grab';
-      // 恢复过渡效果
+      previewContainer.style.cursor = 'default';
+      // 恢复过渡效果和 cursor
       if (previewImage) {
         previewImage.style.transition = 'transform 0.1s ease-out';
+        previewImage.style.cursor = 'grab';
       }
     }
   }
